@@ -64,15 +64,18 @@ complete_res <- sim_results %>%
   arrange(-`Win %`)
 
 
+
 complete_res %>%
   filter(pool == 'UPay') %>%
   mutate(pool = NULL) %>% 
   kable %>%
   paste(collapse = '\n') %>%
+  paste0('\n\nLast Updated: ',Sys.time()) %>% 
   write.table('UPay.txt', row.names = F, col.names = F, quote = F)
 
 complete_res %>%
   filter(pool == 'Main') %>%
   kable %>%
   paste(collapse = '\n') %>%
+  paste0('\n\nLast Updated: ',Sys.time()) %>% 
   write.table('Main.txt', row.names = F, col.names = F, quote = F)
