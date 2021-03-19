@@ -1,21 +1,5 @@
-library(rvest)
 library(tidyverse)
-
-######
-# get who picked whom
-espn_picks <- read_html('https://fantasy.espn.com/tournament-challenge-bracket/2021/en/whopickedwhom') %>%
-  html_nodes(xpath = '//tr/td/span') %>% 
-  html_text() %>% 
-  matrix(ncol = 4, byrow = T) %>% 
-  data.frame %>% 
-  tibble %>% 
-  select(1,2,4) %>% 
-  rename(seed = 1, espn_team_name = 2, prob = 3) %>% 
-  mutate(
-    prob = as.numeric(gsub('%','',prob))/100,
-    rd = rep(2:7,64)
-  )
-######
+library(rvest)
 
 ######
 # get espn ids from another page via the team logos
@@ -48,7 +32,7 @@ team_id_lookup <- tibble(espn_team_name, team_abbr, logo_url = team_logo_url) %>
 # get the 538 teams to get the appropriate team slot
 pred_df <- read_csv('https://projects.fivethirtyeight.com/march-madness-api/2021/fivethirtyeight_ncaa_forecasts.csv') %>% 
   mutate(forecast_date = as.Date(forecast_date)) %>% 
-  filter(forecast_date == max(forecast_date) & gender == 'mens') %>%
+  filter(forecast_date == max(forecast_date) & gender == 'mens' & rd1_win > 0) %>%
   mutate(team_slot = team_slot - team_slot %% 2) %>% 
   group_by(team_slot, team_region) %>% 
   summarise(
@@ -77,25 +61,55 @@ team_id_lookup <- team_id_lookup %>%
   )
 ######
 
+######
+### do the final join
+team_slots <- pred_df %>% 
+  full_join(team_id_lookup) %>% 
+  select(team_slot, espn_team_name)
 
-
-
+team_slots %>% view
+######
 
 ######
-# create the df needed to sim ESPN picks
-new_picks <- espn_picks %>% 
-  left_join(team_id_lookup) %>% 
-  left_join(pred_df) %>% 
-  mutate(rd = paste0('rd',rd,'_win')) %>% 
-  pivot_wider(names_from = rd, values_from = prob) %>% 
-  select(team_slot, team_name, team_id, contains('rd')) 
+# now start scraping individual entries
+entry_id_df <- read_csv('entries.csv')
 
-old_picks <- readRDS('espn_picks.rds')
+all_submissions <- lapply(1:nrow(entry_id_df), function(i) {
+  curr_entry <- entry_id_df[i, ]
+  
+  bracket <- read_html(paste0('https://fantasy.espn.com/tournament-challenge-bracket/',2021,'/en/entry?entryID=', curr_entry$entry))
+  
+  teams <- bracket %>% 
+    html_nodes(xpath = '//div/div[@class="slots"]/div/span/span[@class="name"]') %>% 
+    html_text()
+  
+  selection_ind <- bracket %>% 
+    html_nodes(xpath = '//div/div[@class="slots"]/div/span/@class') %>% 
+    html_text()
+  
+  champ <- bracket %>% 
+    html_nodes(xpath = '//div[@class="center"]//@title') %>% 
+    html_text %>% 
+    rev %>% 
+    .[1]
+  
+  tibble(espn_team_name = c(teams, champ), selection_ind = c(selection_ind,'picked')) %>% 
+    filter(grepl('picked', selection_ind)) %>% 
+    mutate(
+      selection_ind = NULL,
+      rd = c(rep(2, 32), rep(3, 16), rep(4, 8), rep(5, 4), rep(6, 2), 7)
+    ) %>% 
+    left_join(team_slots) %>% 
+    mutate(
+      name = curr_entry$name,
+      pool = curr_entry$pool,
+      rd_slot = team_slot - (team_slot %% (2^rd)) + (64 / (2 ^ (7 - rd)))
+    ) %>% 
+    select(pool, name, rd, rd_slot, team_slot) %>% 
+    return
+}) %>% bind_rows
 
-new_picks %>% pivot_longer(contains('rd'), names_to = 'rd', values_to = 'prob') %>% 
-  left_join(old_picks %>% pivot_longer(contains('rd'), names_to = 'rd', values_to = 'prob'), by = c('team_slot', 'team_name',  'team_id', 'rd'), suffix =  c('_new', '_old')) %>% 
-  mutate(prob_chng = prob_new - prob_old) %>% 
-  arrange(-abs(prob_chng))
+saveRDS(all_submissions, 'all-subs.rds')
 
-new_picks %>% saveRDS('espn_picks.rds')
-######
+
+#html_nodes(xpath = '//div/div[@class="slots"]/div/span[@class="picked"]') %>% 

@@ -48,7 +48,7 @@ team_id_lookup <- tibble(espn_team_name, team_abbr, logo_url = team_logo_url) %>
 # get the 538 teams to get the appropriate team slot
 pred_df <- read_csv('https://projects.fivethirtyeight.com/march-madness-api/2021/fivethirtyeight_ncaa_forecasts.csv') %>% 
   mutate(forecast_date = as.Date(forecast_date)) %>% 
-  filter(forecast_date == max(forecast_date) & gender == 'mens') %>%
+  filter(forecast_date == max(forecast_date) & gender == 'mens' & rd1_win > 0) %>%
   mutate(team_slot = team_slot - team_slot %% 2) %>% 
   group_by(team_slot, team_region) %>% 
   summarise(

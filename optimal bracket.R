@@ -163,7 +163,7 @@ run_sim <- function(group_size, sample_groups, espn_picks, pred_df) {
 }
 
 
-multi_sim <- lapply(1:100, function(x) run_sim(10000, 10, espn_picks, pred_df)) %>%
+multi_sim <- lapply(1:200, function(x) run_sim(1000, 100, espn_picks, pred_df)) %>%
   bind_rows %>% 
   mutate(pick_rank = NULL) %>% 
   group_by(rd, rd_slot, team_slot) %>% 
