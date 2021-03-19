@@ -52,8 +52,8 @@ complete_res <- sim_results %>%
   group_by(pool, name) %>% 
   summarise(
     `Win %` = mean(ifelse(rank == 1, 1, 0)),
-    `Top 3 %` = mean(ifelse(rank <= 3, 1, 0)),
-    `Last %` = mean(ifelse(rank == in_pool, 1, 0)),
+    #`Top 3 %` = mean(ifelse(rank <= 3, 1, 0)),
+    #`Last %` = mean(ifelse(rank == in_pool, 1, 0)),
     `Avg Pts` = mean(tot),
     .groups = 'drop'
   ) %>% 
@@ -66,6 +66,7 @@ complete_res <- sim_results %>%
 
 complete_res %>%
   filter(pool == 'UPay') %>%
+  mutate(pool = NULL) %>% 
   kable %>%
   paste(collapse = '\n') %>%
   write.table('UPay.txt', row.names = F, col.names = F, quote = F)
