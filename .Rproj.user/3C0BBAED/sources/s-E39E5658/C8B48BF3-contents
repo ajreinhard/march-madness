@@ -32,6 +32,9 @@ curr_score <- current_run %>%
   group_by(pool, name) %>% 
   summarise(curr_pts = sum(pts), .groups = 'drop')
 
+
+upd_time <- format(Sys.time(), '%F @ %r')
+
 sim_results <- current_run %>% 
   create_brackets(200) %>% 
   left_join(submitted, by = c('rd', 'rd_slot'), suffix = c('_actual', '_pick')) %>% 
@@ -70,7 +73,7 @@ complete_res %>%
   mutate(pool = NULL) %>% 
   kable %>%
   paste(collapse = '\n') %>%
-  paste0('\n\nLast Updated: ',Sys.time()) %>% 
+  paste0('\n\nLast Updated: ',upd_time) %>% 
   write.table('UPay.txt', row.names = F, col.names = F, quote = F)
 
 complete_res %>%
