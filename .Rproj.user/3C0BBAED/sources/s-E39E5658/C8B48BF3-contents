@@ -63,7 +63,7 @@ complete_res <- sim_results %>%
   left_join(curr_score, by = c("pool", "name")) %>% 
   left_join(max_score, by = c("pool", "name")) %>% 
   mutate(curr_pts = ifelse(is.na(curr_pts), 0, curr_pts)) %>% 
-  rename(`Current` = curr_pts, `Max` = max_pts) %>% 
+  rename(`Curr` = curr_pts, `Max` = max_pts, Name = name) %>% 
   arrange(-`Win %`)
 
 
