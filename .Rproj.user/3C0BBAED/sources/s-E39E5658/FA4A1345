@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1615997981909.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4136918485",
+    "id" : "FA4A1345",
+    "lastKnownWriteTime" : 1615998147,
+    "last_content_update" : 1615998147732,
+    "path" : "~/GitHub/march-madness/538 sim.R",
+    "project_path" : "538 sim.R",
+    "properties" : {
+        "cursorPosition" : "0,0",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
