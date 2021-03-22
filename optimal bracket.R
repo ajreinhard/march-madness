@@ -1,7 +1,7 @@
 library(tidyverse)
 library(scales)
 source('create brackets.R')
-espn_picks <- readRDS('espn_picks.rds')
+espn_picks <- readRDS('espn_picks_w.rds')
 
 pred_df <- read_csv('https://projects.fivethirtyeight.com/march-madness-api/2021/fivethirtyeight_ncaa_forecasts.csv') %>% 
   mutate(forecast_date = as.Date(forecast_date)) %>% 
@@ -163,7 +163,7 @@ run_sim <- function(group_size, sample_groups, espn_picks, pred_df) {
 }
 
 
-multi_sim <- lapply(1:200, function(x) run_sim(1000, 100, espn_picks, pred_df)) %>%
+multi_sim <- lapply(1:1, function(x) run_sim(5, 20000, espn_picks, pred_df)) %>%
   bind_rows %>% 
   mutate(pick_rank = NULL) %>% 
   group_by(rd, rd_slot, team_slot) %>% 

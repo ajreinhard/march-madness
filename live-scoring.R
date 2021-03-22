@@ -71,8 +71,28 @@ standings_df <- sim_results %>%
 
 saveRDS(standings_df, paste0('C:/Users/Owner/Documents/madness-21-saves/standings/', gsub(':','_',sys_time), '.rds'))
 
+
+standings_files <- dir('C:/Users/Owner/Documents/madness-21-saves/standings', full.names = T) %>% file.info %>% rownames_to_column('file') %>% arrange(desc(ctime))
+hist_df <- standings_files %>% pull(file) %>% .[12] %>% readRDS %>% select(pool, name, last_hour_win_prob = win_prob)
+
+# standings_30min <- standings_files %>% mutate(time_since = as.numeric(abs(difftime(Sys.time(), ctime, units = 'mins') - 30))) %>% filter(time_since < 10) %>% arrange(time_since) %>% pull(file) %>% .[1]
+# standings_60min <- standings_files %>% mutate(time_since = as.numeric(abs(difftime(Sys.time(), ctime, units = 'mins') - 60))) %>% filter(time_since < 10) %>% arrange(time_since) %>% pull(file) %>% .[1]
+# standings_120min <- standings_files %>% mutate(time_since = as.numeric(abs(difftime(Sys.time(), ctime, units = 'mins') - 120))) %>% filter(time_since < 10) %>% arrange(time_since) %>% pull(file) %>% .[1]
+# standings_24hrs <- standings_files %>% mutate(time_since = as.numeric(abs(difftime(Sys.time(), ctime, units = 'mins') - (60 * 24)))) %>% filter(time_since < 60) %>% arrange(time_since) %>% pull(file) %>% .[1]
+# 
+# prior_standings <- c()
+# if(!is.na(standings_30min)) {prior_standings <- bind_rows(prior_standings, readRDS(standings_30min) %>% mutate(since = '30mins'))}
+# if(!is.na(standings_60min)) {prior_standings <- bind_rows(prior_standings, readRDS(standings_60min) %>% mutate(since = '1hr'))}
+# if(!is.na(standings_120min)) {prior_standings <- bind_rows(prior_standings, readRDS(standings_120min) %>% mutate(since = '2hrs'))}
+# if(!is.na(standings_24hrs)) {prior_standings <- bind_rows(prior_standings, readRDS(standings_24hrs) %>% mutate(since = '24hrs'))}
+# 
+# hist_df <- prior_standings %>% filter(since == '1hr') %>% select(pool, name, last_hour_win_prob = win_prob)
+
 complete_res <- standings_df %>% 
+  left_join(hist_df) %>% 
   mutate(
+    last_hour_chg = win_prob - last_hour_win_prob,
+    last_hour_chg = ifelse(last_hour_chg > 0.0005, paste0('+',percent(last_hour_chg, accuracy = 0.1)), percent(last_hour_chg, accuracy = 0.1)),
     `Win %` = case_when(
       win_prob == 0 ~ 'OUT',
       win_prob < 0.001 ~ '<0.1%',
@@ -83,11 +103,13 @@ complete_res <- standings_df %>%
       last_prob < 0.001 ~ '<0.1%',
       T ~ percent(last_prob, accuracy = 0.1)
     ),
-    `Avg Pts` = number(avg, accuracy = 0.1)
+    `Avg Pts` = number(avg, accuracy = 0.1, big.mark = ','),
+    curr_pts = number(curr_pts, accuracy = 1, big.mark = ','),
+    max_pts = number(max_pts, accuracy = 1, big.mark = ',')
   ) %>% 
   arrange(-win_prob) %>% 
-  select(pool, name, `Win %`, `Last %`, `Avg Pts`, curr_pts, max_pts) %>% 
-  rename(`Curr` = curr_pts, `Max` = max_pts, Name = name)
+  select(pool, name, `Win %`, last_hour_chg, `Last %`, `Avg Pts`, curr_pts, max_pts) %>% 
+  rename(`Curr` = curr_pts, `Max` = max_pts, Name = name, `Last Hr` = last_hour_chg)
   
 
 html_header <- function(grp) {
@@ -113,7 +135,6 @@ gen_page <- function(df, grp) {
       css.header = "font-weight: bold;"
     ) %>% 
     htmlTable(rnames = F) %>% 
-    gsub('<table', '<table onclick="sortColumn(event)"', .) %>% 
     paste0(html_header(grp), ., '\n\nLast Updated: ',upd_time, '</body>') %>% 
     write.table(paste0('madness/',grp,'.html'), row.names = F, col.names = F, quote = F)
 }
@@ -122,6 +143,3 @@ gen_page(complete_res, 'UPay')
 gen_page(complete_res, 'Otterbein')
 gen_page(complete_res, 'Reinhard')
 
-### set up auto timer
-### set up library to save files
-### bracket similarity
